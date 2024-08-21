@@ -1,8 +1,7 @@
-// src/framebuffer.rs
 #[derive(Clone)]
 pub struct Framebuffer {
-    width: usize,
-    height: usize,
+    pub width: usize, 
+    pub height: usize, 
     buffer: Vec<u32>,
     background_color: u32,
     current_color: u32,
@@ -10,7 +9,7 @@ pub struct Framebuffer {
 
 impl Framebuffer {
     pub fn new(width: usize, height: usize) -> Self {
-        Framebuffer{ 
+        Framebuffer { 
             width, 
             height, 
             buffer: vec![0; width * height],
@@ -27,17 +26,14 @@ impl Framebuffer {
         if x < self.width && y < self.height {
             let index = y * self.width + x;
             self.buffer[index]
-        }
-        else {
+        } else {
             0x000000
         }
-        
     }
     
     pub fn set_background_color(&mut self, color: u32) {
         self.background_color = color;
     }
-
 
     pub fn point(&mut self, x: usize, y: usize) {
         if x < self.width && y < self.height {
@@ -55,5 +51,12 @@ impl Framebuffer {
 
     pub fn get_buffer(&self) -> &[u32] {
         &self.buffer
+    }
+
+    // Nueva función clear para limpiar el framebuffer
+    pub fn clear(&mut self) {
+        for pixel in self.buffer.iter_mut() {
+            *pixel = self.background_color;
+        }
     }
 }

@@ -4,6 +4,8 @@ mod cast_ray;
 mod jugador;
 
 use std::env;
+use std::time::Duration;
+use std::thread::sleep;
 use framebuffer::Framebuffer;
 use maploader::load_maze;
 use cast_ray::cast_ray;
@@ -21,7 +23,7 @@ fn draw_cell(framebuffer: &mut Framebuffer, x: usize, y: usize, block_size: usiz
     framebuffer.draw_rectangle(x, y, block_size, block_size);
 }
 
-fn render(framebuffer: &mut Framebuffer, block_size: usize, player: &Player) {
+fn render2d(framebuffer: &mut Framebuffer, block_size: usize, player: &Player) {
     let maze = load_maze("./maze.txt");
 
     for (row, maze_row) in maze.iter().enumerate() {
@@ -47,12 +49,80 @@ fn render(framebuffer: &mut Framebuffer, block_size: usize, player: &Player) {
         cast_ray(framebuffer, &maze, &player, a, block_size, true);
     }
 }
+fn render3d(framebuffer: &mut Framebuffer, block_size: usize, player: &Player) {
+    let maze = load_maze("./maze.txt");
+    let num_rays = framebuffer.width; // Un rayo por cada columna de píxeles
+
+    let hh = framebuffer.height as f32 / 2.0;
+
+    framebuffer.set_current_color(0xFFFFFF); // Color para las paredes en 3D
+
+    let fov_adjustment = player.fov / framebuffer.width as f32;
+    let distance_to_projection_plane = (framebuffer.width as f32 / 2.0) / (player.fov / 2.0).tan();
+
+    for i in 0..num_rays {
+        let ray_angle = player.a - (player.fov / 2.0) + (i as f32 * fov_adjustment);
+        let intersect = cast_ray(framebuffer, &maze, player, ray_angle, block_size, false);
+
+        let distance_to_wall = intersect.distance * (ray_angle - player.a).cos();
+        let wall_height = (block_size as f32 / distance_to_wall) * distance_to_projection_plane;
+
+        let wall_top = (hh - wall_height / 2.0).max(0.0) as usize;
+        let wall_bottom = (hh + wall_height / 2.0).min(framebuffer.height as f32) as usize;
+
+        for y in wall_top..wall_bottom {
+            framebuffer.point(i, y);
+        }
+    }
+}
+
+fn render3da(framebuffer: &mut Framebuffer,  block_size: usize,player: &Player, maze: &Vec<Vec<char>>) {
+    let num_rays = framebuffer.width; // Un rayo por cada columna de píxeles
+    let hh = framebuffer.height as f32 / 2.0;
+
+    // Colores de cielo y suelo
+    let sky_color = 0x87CEEB;
+    let ground_color = 0x006400;
+
+    // Dibujar cielo y suelo
+    for i in 0..framebuffer.width {
+        framebuffer.set_current_color(sky_color);
+        for j in 0..(framebuffer.height / 2) {
+            framebuffer.point(i, j);
+        }
+
+        framebuffer.set_current_color(ground_color);
+        for j in (framebuffer.height / 2)..framebuffer.height {
+            framebuffer.point(i, j);
+        }
+    }
+
+    // Configuraciones para raycasting
+    let fov_adjustment = player.fov / framebuffer.width as f32;
+    let distance_to_projection_plane = (framebuffer.width as f32 / 2.0) / (player.fov / 2.0).tan();
+
+    for i in 0..num_rays {
+        let ray_angle = player.a - (player.fov / 2.0) + (i as f32 * fov_adjustment);
+        let intersect = cast_ray(framebuffer, maze, player, ray_angle, 50, false);
+
+        let distance = intersect.distance * (ray_angle - player.a).cos();
+        let wall_height = (block_size as f32 / distance) * distance_to_projection_plane;
+
+        let wall_top = (hh - wall_height / 2.0).max(0.0) as usize;
+        let wall_bottom = (hh + wall_height / 2.0).min(framebuffer.height as f32) as usize;
+
+        framebuffer.set_current_color(0xFF0000); // Color de la pared
+        for y in wall_top..wall_bottom {
+            framebuffer.point(i, y);
+        }
+    }
+}
 
 fn main() {
     let current_dir = env::current_dir().unwrap();
     println!("Directorio actual: {:?}", current_dir);
-    
-    let maze = load_maze("./maze.txt");
+    let frame_delay = Duration::from_millis(16);
+    let maze: Vec<Vec<char>> = load_maze("./maze.txt");
     let height = maze.len();
     let width = maze.iter().map(|line| line.len()).max().unwrap_or(0);
     let block_size = 50;
@@ -71,15 +141,33 @@ fn main() {
     ).unwrap_or_else(|e| {
         panic!("Window creation failed: {}", e);
     });
-
+    
+    let mut mode = "2D";
+    
     while window.is_open() && !window.is_key_down(Key::O) {
+
+        if window.is_key_down(Key::O){
+            break;
+        }
+        if window.is_key_down(Key::M){
+            mode = if mode == "2D" {"3D"} else {"2D"};
+        }
         // Procesar eventos (movimiento del jugador)
         process_events(&window, &mut player, &maze);
 
-        // Renderizar el laberinto, la posición del jugador y los rayos
-        render(&mut framebuffer, block_size, &player);
+        framebuffer.clear();
 
+        if mode == "2D"{
+            render2d(&mut framebuffer, block_size, &player);
+        }else {
+            // render3d(&mut framebuffer, block_size, &player);
+            render3da(&mut framebuffer, block_size, &player, &maze)
+        }
+
+        
         // Actualizar el buffer de la ventana
-        window.update_with_buffer(framebuffer.get_buffer(), width * block_size, height * block_size).unwrap();
+        window.update_with_buffer(framebuffer.get_buffer(), width * block_size, height * block_size)
+        .unwrap();
+    sleep(frame_delay)
     }
 }

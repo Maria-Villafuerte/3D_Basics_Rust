@@ -18,6 +18,7 @@ pub fn cast_ray(
     let mut d = 0.0;
 
     framebuffer.set_current_color(0x001cc0);
+
     loop {
         let cos = d * a.cos();
         let sin = d * a.sin();
@@ -37,10 +38,6 @@ pub fn cast_ray(
             maxhit = hitx;
         }
 
-        if draw_line {
-            framebuffer.point(x, y);
-        }
-
         if maze[j][i] != ' ' {
             return Intersect {
                 distance: d,
@@ -48,6 +45,10 @@ pub fn cast_ray(
                 tx: maxhit * 128 / block_size,
             };
         }
+        if draw_line {
+            framebuffer.point(x, y);
+        }
+
         d += 10.0;
     }
 }
