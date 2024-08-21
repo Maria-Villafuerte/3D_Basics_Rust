@@ -4,29 +4,45 @@ pub struct Framebuffer {
     width: usize,
     height: usize,
     buffer: Vec<u32>,
+    background_color: u32,
     current_color: u32,
 }
 
 impl Framebuffer {
     pub fn new(width: usize, height: usize) -> Self {
-        let buffer = vec![0x333355; width * height]; // Default background color
-        let current_color = 0xFFDDDD;
-        Framebuffer { width, height, buffer, current_color }
+        Framebuffer{ 
+            width, 
+            height, 
+            buffer: vec![0; width * height],
+            background_color: 0x000000,
+            current_color: 0xFFFFFF,
+        }
     }
 
     pub fn set_current_color(&mut self, color: u32) {
         self.current_color = color;
     }
 
-    pub fn set_color(&mut self, x: usize, y: usize, color: u32) {
+    pub fn set_color(&mut self, x: usize, y: usize) -> u32 {
         if x < self.width && y < self.height {
             let index = y * self.width + x;
-            self.buffer[index] = color;
+            self.buffer[index]
         }
+        else {
+            0x000000
+        }
+        
+    }
+    
+    pub fn set_background_color(&mut self, color: u32) {
+        self.background_color = color;
     }
 
+
     pub fn point(&mut self, x: usize, y: usize) {
-        self.set_color(x, y, self.current_color);
+        if x < self.width && y < self.height {
+            self.buffer[y * self.width + x] = self.current_color;
+        }
     }
 
     pub fn draw_rectangle(&mut self, x: usize, y: usize, width: usize, height: usize) {
