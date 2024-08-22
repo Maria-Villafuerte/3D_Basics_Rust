@@ -49,64 +49,30 @@ fn render2d(framebuffer: &mut Framebuffer, block_size: usize, player: &Player) {
         cast_ray(framebuffer, &maze, &player, a, block_size, true);
     }
 }
-fn render3d(framebuffer: &mut Framebuffer, block_size: usize, player: &Player) {
-    let maze = load_maze("./maze.txt");
+
+fn render3d(framebuffer: &mut Framebuffer, player: &Player, maze: &Vec<Vec<char>>) {
     let num_rays = framebuffer.width; // Un rayo por cada columna de píxeles
-
     let hh = framebuffer.height as f32 / 2.0;
-
-    framebuffer.set_current_color(0xFFFFFF); // Color para las paredes en 3D
-
     let fov_adjustment = player.fov / framebuffer.width as f32;
     let distance_to_projection_plane = (framebuffer.width as f32 / 2.0) / (player.fov / 2.0).tan();
 
-    for i in 0..num_rays {
-        let ray_angle = player.a - (player.fov / 2.0) + (i as f32 * fov_adjustment);
-        let intersect = cast_ray(framebuffer, &maze, player, ray_angle, block_size, false);
-
-        let distance_to_wall = intersect.distance * (ray_angle - player.a).cos();
-        let wall_height = (block_size as f32 / distance_to_wall) * distance_to_projection_plane;
-
-        let wall_top = (hh - wall_height / 2.0).max(0.0) as usize;
-        let wall_bottom = (hh + wall_height / 2.0).min(framebuffer.height as f32) as usize;
-
-        for y in wall_top..wall_bottom {
-            framebuffer.point(i, y);
-        }
-    }
-}
-
-fn render3da(framebuffer: &mut Framebuffer,  block_size: usize,player: &Player, maze: &Vec<Vec<char>>) {
-    let num_rays = framebuffer.width; // Un rayo por cada columna de píxeles
-    let hh = framebuffer.height as f32 / 2.0;
-
-    // Colores de cielo y suelo
+    // Dibujar cielo y suelo
     let sky_color = 0x87CEEB;
     let ground_color = 0x006400;
 
-    // Dibujar cielo y suelo
-    for i in 0..framebuffer.width {
-        framebuffer.set_current_color(sky_color);
-        for j in 0..(framebuffer.height / 2) {
-            framebuffer.point(i, j);
-        }
+    framebuffer.set_current_color(sky_color);
+    framebuffer.draw_rectangle(0, 0, framebuffer.width, framebuffer.height / 2);
 
-        framebuffer.set_current_color(ground_color);
-        for j in (framebuffer.height / 2)..framebuffer.height {
-            framebuffer.point(i, j);
-        }
-    }
+    framebuffer.set_current_color(ground_color);
+    framebuffer.draw_rectangle(0, framebuffer.height / 2, framebuffer.width, framebuffer.height / 2);
 
-    // Configuraciones para raycasting
-    let fov_adjustment = player.fov / framebuffer.width as f32;
-    let distance_to_projection_plane = (framebuffer.width as f32 / 2.0) / (player.fov / 2.0).tan();
-
+    // Dibujar las paredes
     for i in 0..num_rays {
         let ray_angle = player.a - (player.fov / 2.0) + (i as f32 * fov_adjustment);
         let intersect = cast_ray(framebuffer, maze, player, ray_angle, 50, false);
 
-        let distance = intersect.distance * (ray_angle - player.a).cos();
-        let wall_height = (block_size as f32 / distance) * distance_to_projection_plane;
+        let distance = intersect.distance * (ray_angle - player.a).cos(); // Corrección del efecto "fish-eye"
+        let wall_height = (framebuffer.height as f32 / distance) * distance_to_projection_plane;
 
         let wall_top = (hh - wall_height / 2.0).max(0.0) as usize;
         let wall_bottom = (hh + wall_height / 2.0).min(framebuffer.height as f32) as usize;
@@ -126,12 +92,12 @@ fn main() {
     let height = maze.len();
     let width = maze.iter().map(|line| line.len()).max().unwrap_or(0);
     let block_size = 50;
-    
+
     let mut framebuffer = Framebuffer::new(width * block_size, height * block_size);
-    
+
     // Inicializa la posición del jugador, ángulo y campo de visión
     let mut player = Player::new(vec2(100.0, 100.0), 0.0, 60.0);
-    
+
     // Crear una ventana con minifb
     let mut window = Window::new(
         "Laberinto",
@@ -141,33 +107,26 @@ fn main() {
     ).unwrap_or_else(|e| {
         panic!("Window creation failed: {}", e);
     });
-    
+
     let mut mode = "2D";
-    
+
     while window.is_open() && !window.is_key_down(Key::O) {
+        if window.is_key_down(Key::M) {
+            mode = if mode == "2D" { "3D" } else { "2D" };
+            sleep(Duration::from_millis(200)); // Evitar cambio rápido
+        }
 
-        if window.is_key_down(Key::O){
-            break;
-        }
-        if window.is_key_down(Key::M){
-            mode = if mode == "2D" {"3D"} else {"2D"};
-        }
-        // Procesar eventos (movimiento del jugador)
         process_events(&window, &mut player, &maze);
-
         framebuffer.clear();
 
-        if mode == "2D"{
+        if mode == "2D" {
             render2d(&mut framebuffer, block_size, &player);
-        }else {
-            // render3d(&mut framebuffer, block_size, &player);
-            render3da(&mut framebuffer, block_size, &player, &maze)
+        } else {
+            render3d(&mut framebuffer, &player, &maze);
         }
 
-        
-        // Actualizar el buffer de la ventana
-        window.update_with_buffer(framebuffer.get_buffer(), width * block_size, height * block_size)
-        .unwrap();
-    sleep(frame_delay)
+        window.update_with_buffer(framebuffer.get_buffer(), framebuffer.width, framebuffer.height)
+            .unwrap();
+        sleep(frame_delay);
     }
 }
