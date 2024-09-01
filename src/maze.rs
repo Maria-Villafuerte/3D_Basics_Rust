@@ -19,6 +19,11 @@ pub fn load_maze(filename: &str) -> (Vec<Vec<char>>, Vec2) {
         maze.push(row);
     }
 
+     // If no 'g' was found, set a default finish line
+     if finish_line == Vec2::new(0.0, 0.0) {
+        finish_line = Vec2::new(1300.0, 1300.0);  // Adjust this based on your maze size
+    }
+
     (maze, finish_line)
 }
 

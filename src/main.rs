@@ -39,7 +39,7 @@ use gilrs::Gilrs;
 static SKY: Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("src\\assets\\sky1.png")));
 static FLOOR: Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("src\\assets\\floor.png")));
 static WALL: Lazy<Arc<Texture>> = Lazy::new(||  Arc::new(Texture::new("src\\assets\\wall.png")));
-static MONSTER: Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("src\\assets\\monster.png")));
+static MONSTER: Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("src\\assets\\monster2.png")));
 
 fn cell_to_texture_color(cell: char, tx: u32, ty: u32) -> u32 {
     let default_color = 0x000000;
@@ -260,7 +260,6 @@ fn draw_line(framebuffer: &mut Framebuffer, x1: usize, y1: usize, x2: usize, y2:
         }
     }
 }
-
 fn main() {
     let mut show_minimap = false;
     let font_data = std::fs::read("src\\assets\\Montserrat-Medium.ttf").expect("failed to read font file");
@@ -275,8 +274,8 @@ fn main() {
     let mut framebuffer = Framebuffer::new(window_width, window_height);
     framebuffer.set_background_color(0x333355);
 
-    audio::play_background_music(); 
-
+  // Initialize and play background music
+  audio::play_background_music();
     let mut window = Window::new(
         "Rust Graphics - Maze Escape",
         window_width,
@@ -287,44 +286,50 @@ fn main() {
     window.set_position(100, 100);
     window.set_cursor_visibility(false);
 
-// Show welcome screen
-let mut welcome_screen = true;
-while welcome_screen && window.is_open() {
-    framebuffer.clear();
-    framebuffer.set_background_color(0x000000); // Black background
+    // Show welcome screen
+    let mut welcome_screen = true;
+    while welcome_screen && window.is_open() {
+        framebuffer.clear();
+        framebuffer.set_background_color(0x000000); // Black background
 
-    text_renderer.render_text(&mut framebuffer, "Welcome to Maze Escape!", 100.0, 100.0, 0xFFFFFF);
-    text_renderer.render_text(&mut framebuffer, "Instructions:", 100.0, 150.0, 0xFFFFFF);
-    text_renderer.render_text(&mut framebuffer, "- Use W, A, S, D keys or gamepad to move", 120.0, 200.0, 0xFFFFFF);
-    text_renderer.render_text(&mut framebuffer, "- Use mouse or right analog stick to look around", 120.0, 250.0, 0xFFFFFF);
-    text_renderer.render_text(&mut framebuffer, "- Press 'M' to toggle minimap", 120.0, 300.0, 0xFFFFFF);
-    text_renderer.render_text(&mut framebuffer, "- Reach the green finish line to win", 120.0, 350.0, 0xFFFFFF);
-    text_renderer.render_text(&mut framebuffer, "Press SPACE to start the game", 100.0, 450.0, 0xFFFFFF);
+        text_renderer.render_text(&mut framebuffer, "Welcome to Maze Escape!", 100.0, 100.0, 0xFFFFFF);
+        text_renderer.render_text(&mut framebuffer, "Instructions:", 100.0, 150.0, 0xFFFFFF);
+        text_renderer.render_text(&mut framebuffer, "- Use W, A, S, D keys or gamepad to move", 120.0, 200.0, 0xFFFFFF);
+        text_renderer.render_text(&mut framebuffer, "- Use mouse or right analog stick to look around", 120.0, 250.0, 0xFFFFFF);
+        text_renderer.render_text(&mut framebuffer, "- Press 'M' to toggle minimap", 120.0, 300.0, 0xFFFFFF);
+        text_renderer.render_text(&mut framebuffer, "- Reach the green finish line to win", 120.0, 350.0, 0xFFFFFF);
+        text_renderer.render_text(&mut framebuffer, "Press Q to start the game", 100.0, 450.0, 0xFFFFFF);
 
-    window.update_with_buffer(&framebuffer.buffer, window_width, window_height).unwrap();
+        window.update_with_buffer(&framebuffer.buffer, window_width, window_height).unwrap();
 
-    if window.is_key_down(Key::Space) {
-        welcome_screen = false;
+        if window.is_key_down(Key::Q) {
+            welcome_screen = false;
+        }
+
+        if window.is_key_down(Key::Escape) {
+            return;
+        }
     }
-
-    if window.is_key_down(Key::Escape) {
-        return;
-    }
-}
 
     let mut player = Player {
         pos: Vec2::new(150.0, 150.0),
         a: PI/1.3,
         fov: PI/4.0,
     };    
-    
-    let monsters = vec![
-        Vec2::new(260.0, 260.0), Vec2::new(178.0, 717.0),
-        Vec2::new(1008.0, 155.0), Vec2::new(480.0, 329.0),
-        Vec2::new(1096.0, 558.0),
+
+    let monsters: Vec<Vec2> = vec![
+        Vec2::new(250.0, 250.0),
+        Vec2::new(600.0, 300.0),
+        Vec2::new(550.0, 650.0),
+        Vec2::new(476.0, 196.0),
+        Vec2::new(881.0, 143.0),
+        Vec2::new(1355.0, 144.0),
+        Vec2::new(1050.0, 450.0),
+        Vec2::new(1400.0, 650.0),
+        Vec2::new(780.0, 950.0),
+        Vec2::new(200.0, 750.0),
     ];
 
-    let finish_line = Vec2::new(500.0, 220.0);
     let mut game_state = "PLAY".to_string();
 
     let minimap_scale = 0.25;  // Increased scale for better visibility
@@ -355,7 +360,7 @@ while welcome_screen && window.is_open() {
                 
                 // Check if player has reached the finish line
                 let distance_to_finish = nalgebra_glm::distance(&player.pos, &finish_line);
-                if distance_to_finish < 50.0 {
+                if distance_to_finish < 100.0 {  // Increased the detection radius
                     game_state = "SUCCESS".to_string();
                     println!("Player reached finish line! Distance: {}", distance_to_finish);
                 }
