@@ -274,8 +274,8 @@ fn main() {
     let mut framebuffer = Framebuffer::new(window_width, window_height);
     framebuffer.set_background_color(0x333355);
 
-    audio::play_background_music(); 
-
+  // Initialize and play background music
+  audio::play_background_music();
     let mut window = Window::new(
         "Rust Graphics - Maze Escape",
         window_width,
