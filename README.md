@@ -54,9 +54,6 @@ Este proyecto implementa un Ray Caster simple en Rust que renderiza un nivel ent
 - Rotación con el Mouse (10 puntos): Implementar rotación horizontal con el mouse.
 - Minimapa (10 puntos): Mostrar la posición del jugador en un minimapa.
 - Música de Fondo (5 puntos): Agregar música de fondo.
-- Efectos de Sonido (10 puntos): Agregar efectos de sonido.
 - Sprites y Billboarding (20 puntos): Agregar sprites y billboarding.
-- Animaciones (30 puntos): Agregar al menos una animación a un sprite.
 - Pantalla de Bienvenida (5 puntos): Incluir una pantalla de bienvenida.
-- Selección de Niveles (10 puntos): Permitir selección de niveles en la pantalla de bienvenida.
 - Pantalla de Éxito (10 puntos): Mostrar una pantalla de éxito al cumplir condiciones.
