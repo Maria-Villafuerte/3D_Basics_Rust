@@ -26,6 +26,12 @@ Este proyecto implementa un Ray Caster simple en Rust que renderiza un nivel ent
 - [Cargo](https://doc.rust-lang.org/cargo/) (incluido con Rust)
 - [Dependencias del proyecto](Cargo.toml)
 
+## Demostración 
+
+![Raycasting Demo](/GiftDemo.gif)
+
+
+
 ## Instalación
 
 1. Clona el repositorio:
