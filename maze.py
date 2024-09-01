@@ -43,4 +43,4 @@ def make_maze(w=16, h=8, output_format='text'):
         return json.dumps(jsona)
 
 # Test the function
-print(make_maze(10, 10, 'text'))
+print(make_maze(2, 2, 'text'))
